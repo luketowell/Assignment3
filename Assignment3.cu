@@ -97,7 +97,7 @@ int main()
    cudaMemcpy(Y, devY, dataPoints*sizeof(float), cudaMemcpyDeviceToHost);
 
    //Check for errors after copying errors over from device to host.
-   cudaError err = cudaGetLastError();
+   err = cudaGetLastError();
    if (err != cudaSuccess) {
      printf("(3) CUDA RT error: %s \n", cudaGetErrorString(err));
    }
