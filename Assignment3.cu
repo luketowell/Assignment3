@@ -3,39 +3,33 @@
 
 // Code for the parallel CUDA code
 __global__ void exponentialFunction (int dataPoints, float *devX, float *devY)
-{  
+{
    float first, second, third;
    int my_i = blockIdx.x*blockDim.x + threadIdx.x;
-        
+
    if (my_i<dataPoints+1){
       first = ((devX[my_i]-2))*((devX[my_i]-2));
       second = (pow((devX[my_i]-6.0),2)/10);
-      third = (1/(pow((double)devX[my_i],2.0)+1)); 
+      third = (1/(pow((double)devX[my_i],2.0)+1));
       devY[my_i] = (expf(-first)+expf(-second)+third);
    }
- 
+
 }
 
-//run Serial Code
+// Serial Code
 void serialFunction (int dataPoints, float *X, float *Y)
-{  
+{
    float first, second, third;
    int i;
-   printf("running serial code \n");
+
    for(i=0; i < dataPoints+1; i++)
-      {  
+      {
          first = ((X[i]-2))*((X[i]-2));
          second = (pow((X[i]-6),2)/10);
          third = (1/(pow(X[i],2)+1));
          Y[i] = (exp(-first)+exp(-second)+third);
       }
-   
-   for(i=0; i < dataPoints+1; i++)
-   {  
-      printf("X = %0.8f \n", X[i]);
-      printf("Y = %0.8f \n", Y[i]);
-   }
-   
+
    printf("ran serial code \n");
 }
 
