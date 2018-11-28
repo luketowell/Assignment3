@@ -42,7 +42,7 @@ int main()
    // X and F(x) as Y declaration
    float *X, *Y;
    float *devX, *devY;
-   
+
    //Insert here if statement for if not detected;
 
    //create cuda timing objects
@@ -79,30 +79,43 @@ int main()
    int blocks = ceil((float)dataPoints/(float)threads);
    printf("using %d on %d blocks \n", threads, blocks);
 
+   //Start the Cuda Timings
+   cudaEventRecord(startCuda, 0);
+
    //Call the function kernel
    exponentialFunction<<<blocks,threads>>> (dataPoints, devX, devY);
+   //Stop the Cuda Timings
+   cudaEventRecord(stopCuda, 0);
 
-   //wait for the device
-   cudaThreadSynchronize();
+   // check for errors after running Kernel
+   err = cudaGetLastError();
+   if (err != cudaSuccess) {
+     printf("(2) CUDA RT error: %s \n", cudaGetErrorString(err));
+   }
 
    // Copy over the Y value from the device to the host
    cudaMemcpy(Y, devY, dataPoints*sizeof(float), cudaMemcpyDeviceToHost);
 
-   //Check for Errors
+   //Check for errors after copying errors over from device to host.
    cudaError err = cudaGetLastError();
    if (err != cudaSuccess) {
-     printf("(1) CUDA RT error: %s \n", cudaGetErrorString(err));
+     printf("(3) CUDA RT error: %s \n", cudaGetErrorString(err));
    }
 
    //clean up memory
    cudaFree(devX);
    cudaFree(devY);
 
-   //print out the values at the moment
+   //Work out time
+   float cTime;
+   cudaEventElapsedTime(&cTime, startCuda, stopCuda);
+   printf("Ran on device in: %f microseconds \n", cTime);
+
+   //print out the Cuda+OMP result and timing
    for(i=0; i < dataPoints+1; i++)
    {
-      printf("X = %0.8f \n", X[i]);
-      printf("Y = %0.8f \n", Y[i]);
+      printf("X = %0.5f \n", X[i]);
+      printf("Y = %0.5f \n", Y[i]);
    }
 
    //call the serial code:
