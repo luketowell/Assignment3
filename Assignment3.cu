@@ -42,13 +42,14 @@ int main()
    // X and F(x) as Y declaration
    float *X, *Y;
    float *devX, *devY;
+   
    //Insert here if statement for if not detected;
 
    //create cuda timing objects
    cudaEvent_t startCuda, stopCuda;
    cudaEventCreate(&startCuda);
    cudaEventCreate(&stopCuda);
-   
+
    // Device memory allocation
    cudaMalloc(&devX, dataPoints*sizeof(float));
    cudaMalloc(&devY, dataPoints*sizeof(float));
@@ -59,18 +60,24 @@ int main()
 
    float discretePoint = steps/dataPoints;
 
-
    //discretise the range to work out X[i]
    for (i= 0; i < dataPoints+1; i++){
       X[i] = (discretePoint * i)-100;
    }
 
    // Copy the host contents of X over to device devX
-   cudaMemcpy(devX, X, dataPoints*sizeof(float), cudaMemcpyHostToDevice);
+   cudaMemcpy(devX, X, dataPoints*sizeof(float), cudaMemcpyHostToDevice);       
 
-   //Work out threads and blocks
+   // Check for errors after Copying X over to new Device
+   cudaError err = cudaGetLastError();
+   if (err != cudaSuccess) {
+     printf("(1) CUDA RT error: %s \n", cudaGetErrorString(err));
+   }
+   
+   //Work out threads and blocks and print out number of threads and blocks
    int threads = 32;
    int blocks = ceil((float)dataPoints/(float)threads);
+   printf("using %d on %d blocks \n", threads, blocks);
 
    //Call the function kernel
    exponentialFunction<<<blocks,threads>>> (dataPoints, devX, devY);
