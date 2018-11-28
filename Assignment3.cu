@@ -50,6 +50,11 @@ int main()
    float *devX, *devY;
    //Insert here if statement for if not detected;
 
+   //create cuda timing objects
+   cudaEvent_t startCuda, stopCuda;
+   cudaEventCreate(&startCuda);
+   cudaEventCreate(&stopCuda);
+   
    // Device memory allocation
    cudaMalloc(&devX, dataPoints*sizeof(float));
    cudaMalloc(&devY, dataPoints*sizeof(float));
