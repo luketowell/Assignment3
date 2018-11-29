@@ -123,41 +123,50 @@ int main(int argc, char **argv)
       cudaFree(devX);
       cudaFree(devY);
 	
-      cudaEnd = omp_get_wtime();
       //Work out time
       float cTime;
       cudaEventElapsedTime(&cTime, startCuda, stopCuda);
       
  
       //print out the Cuda+OMP result and timing
+      #pragma omp parallel for default(none) shared(Y, dataPoints) private(i) reduction(max: maxY) 
       for(i=0; i < dataPoints+1; i++)
       {
-         printf("X = %0.5f \n", X[i]);
-         printf("Y = %0.5f \n", Y[i]);
+         if (Y[i] > maxY){
+             maxY = Y[i];
+         }
       }
+      //end of cuda+omp implementation
+      cudaEnd = omp_get_wtime();
 
       //start serial timings
       serialStart = omp_get_wtime();
       
       //work out discrete point again for serial
-      discretePoint = steps/dataPoints;
+      float serialDiscretePoint = steps/dataPoints;
 
 
       //discretise the range to work out X[i]
       serialInitStart = omp_get_wtime();
 
       for (i= 0; i < dataPoints+1; i++){
-         X[i] = (discretePoint * i)-100;
+        serialX[i] = (serialDiscretePoint * i)-100;
       }
       
       serialInitEnd = omp_get_wtime();
 
       //call the serial code:
       serialFunctionStart = omp_get_wtime(); 
-      serialFunction(dataPoints, X, Y);
+      serialFunction(dataPoints,serialX, serialY);
       serialFunctionEnd = omp_get_wtime();
 
       //work out max in serial
+      for(i=0; i < dataPoints+1; i++)
+      {
+         if (serialY[i] > serialMaxY){
+             serialMaxY = Y[i];
+         }
+      }
 
       //end serial timings
       serialEnd = omp_get_wtime();
@@ -169,6 +178,8 @@ int main(int argc, char **argv)
       printf("serial init %0.5f\n", (serialInitEnd - serialInitStart)*1000);
       printf("serial function: %0.5f\n", (serialFunctionEnd-serialFunctionStart)*1000);
       printf("all serial: %0.5f \n", (serialEnd - serialStart) * 1000);
+      printf("cuda+omp maxY: %0.5f\n", maxY);
+      printf("serial maxY: %0.5f\n", serialMaxY);
 
    }
    else
