@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <math.h>
+#include <omp.h>
+#include <stdlib.h>
 
 // Code for the parallel CUDA code
 __global__ void exponentialFunction (int dataPoints, float *devX, float *devY)
@@ -33,7 +35,7 @@ void serialFunction (int dataPoints, float *X, float *Y)
    printf("ran serial code \n");
 }
 
-int main()
+int main(int argc, char **argv)
 {
    int i, numGPU;
 	
@@ -41,8 +43,8 @@ int main()
    if (numGPU >= 1) {
 
       float steps = 200;
-      int dataPoints = 1000;
-
+      int dataPoints = strtol(argv[1], NULL, 10);
+     
       // X and F(x) as Y declaration
       float *X, *Y;
       float *devX, *devY;
@@ -52,6 +54,10 @@ int main()
       cudaEvent_t startCuda, stopCuda;
       cudaEventCreate(&startCuda);
       cudaEventCreate(&stopCuda);
+
+      //OMP timing variables
+      double cudaStart, cudaEnd, serialFunctionStart, serialFunctionEnd, serialStart, serialEnd;
+      
       // Device memory allocation
       cudaMalloc(&devX, dataPoints*sizeof(float));
       cudaMalloc(&devY, dataPoints*sizeof(float));
@@ -59,7 +65,9 @@ int main()
       //Host Memory Allocation
       X = (float *) malloc(sizeof(float)*dataPoints);
       Y = (float *) malloc(sizeof(float)*dataPoints);
-	
+      
+      //Start executing
+      cudaStart = omp_get_wtime();	
       float discretePoint = steps/dataPoints;
 
 
@@ -78,7 +86,7 @@ int main()
       }
   
       //Work out threads and blocks and print out number of threads and blocks
-      int threads = 8;
+      int threads = strtol(argv[2], NULL, 10);
       int blocks = ceil((float)dataPoints/(float)threads);
       printf("using %d threads on %d blocks \n", threads, blocks);
 
@@ -108,12 +116,13 @@ int main()
 
       //clean up memory
       cudaFree(devX);
-      cudaFree(devY);	
-  
+      cudaFree(devY);
+	
+      cudaEnd = omp_get_wtime();
       //Work out time
       float cTime;
       cudaEventElapsedTime(&cTime, startCuda, stopCuda);
-      printf("Ran on device in: %f microseconds \n", cTime);
+      
  
       //print out the Cuda+OMP result and timing
       /*for(i=0; i < dataPoints+1; i++)
@@ -122,13 +131,36 @@ int main()
          printf("Y = %0.5f \n", Y[i]);
       }*/
 
+      //start serial timings
+      serialStart = omp_get_wtime();
+      
+      //work out discrete point again for serial
+      discretePoint = steps/dataPoints;
+
+
+      //discretise the range to work out X[i]
+      for (i= 0; i < dataPoints+1; i++){
+         X[i] = (discretePoint * i)-100;
+      }
       //call the serial code:
+      serialFunctionStart = omp_get_wtime(); 
       serialFunction(dataPoints, X, Y);
-      printf("%f \n", discretePoint);
+      serialFunctionEnd = omp_get_wtime();
+
+      //work out max in serial
+
+      //end serial timings
+      serialEnd = omp_get_wtime();
+      
+      //total timings
+      printf("cuda function: %0.5f\n", cTime);
+      printf("total cuda Time: %0.5f\n", (cudaEnd - cudaStart)*1000);
+      printf("serial function: %0.5f\n", (serialFunctionEnd-serialFunctionStart)*1000);
+      printf("all serial: %0.5f \n", (serialEnd - serialStart) * 1000);
+
    }
    else
    {
-    //No GPU detected  
     printf("No GPUs are detected!\n");
    }
 }
