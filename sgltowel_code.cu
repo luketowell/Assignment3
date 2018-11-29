@@ -71,9 +71,12 @@ int main(int argc, char **argv)
 
 
       //discretise the range to work out X[i]
+      ompInitStart = omp_get_wtime();
+      #pragma omp parallel for default(none) shared(dataPoints, X, discretePoint) private(i)
       for (i= 0; i < dataPoints+1; i++){
          X[i] = (discretePoint * i)-100;
       }
+      ompInitEnd = omp_get_wtime();
 
       // Copy the host contents of X over to device devX
       cudaMemcpy(devX, X, dataPoints*sizeof(float), cudaMemcpyHostToDevice);	
@@ -138,9 +141,14 @@ int main(int argc, char **argv)
 
 
       //discretise the range to work out X[i]
+      serialInitStart = omp_get_wtime();
+
       for (i= 0; i < dataPoints+1; i++){
          X[i] = (discretePoint * i)-100;
       }
+      
+      serialInitEnd = omp_get_wtime();
+
       //call the serial code:
       serialFunctionStart = omp_get_wtime(); 
       serialFunction(dataPoints, X, Y);
@@ -152,8 +160,10 @@ int main(int argc, char **argv)
       serialEnd = omp_get_wtime();
       
       //total timings
+      printf("omp init %0.5f\n", (ompInitEnd - ompInitStart)*1000);
       printf("cuda function: %0.5f\n", cTime);
       printf("total cuda Time: %0.5f\n", (cudaEnd - cudaStart)*1000);
+      printf("serial init %0.5f\n", (serialInitEnd - serialInitStart)*1000);
       printf("serial function: %0.5f\n", (serialFunctionEnd-serialFunctionStart)*1000);
       printf("all serial: %0.5f \n", (serialEnd - serialStart) * 1000);
 
