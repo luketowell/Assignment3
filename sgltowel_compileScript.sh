@@ -10,8 +10,9 @@ fi
 
 EXE=sgltowel_code.cu
 OUTPUTFILE=sgltowel-code.exe
-COMPILECOMMAND = nvcc ${EXE} -o ${OUTPUTFILE}
 
 echo running ${COMPILECOMMAND}
-$COMPILECOMMAND
+echo load module cuda-8.0
+module load cuda-8.0
+nvcc ./${EXE} -o ./${OUTPUTFILE}
 echo $OUTPUTFILE file compiled
