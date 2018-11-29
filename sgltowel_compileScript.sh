@@ -14,5 +14,6 @@ OUTPUTFILE=sgltowel_code.exe
 echo running ${COMPILECOMMAND}
 echo load module cuda-8.0
 module load cuda-8.0
+module load gcc/5.3
 nvcc -Xcompiler -fopenmp ./${EXE} -o ./${OUTPUTFILE}
 echo $OUTPUTFILE file compiled
