@@ -1,5 +1,5 @@
 usage(){
-        echo $0 ./parallelCode.exe numOMPThreads numGPUThreadsPC numRepeats arrayLength 
+        echo $0 numOfRepeats numOMPThreads numGPUThreadsPC arrayLength 
 }
 
 if [[ $# -ne 4 ]]; then
