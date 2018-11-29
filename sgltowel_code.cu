@@ -48,7 +48,6 @@ int main(int argc, char **argv)
       // X and F(x) as Y declaration
       float *X, *Y;
       float *devX, *devY;
-      //Insert here if statement for if not detected;
   
       //create cuda timing objects
       cudaEvent_t startCuda, stopCuda;
@@ -56,7 +55,7 @@ int main(int argc, char **argv)
       cudaEventCreate(&stopCuda);
 
       //OMP timing variables
-      double cudaStart, cudaEnd, serialFunctionStart, serialFunctionEnd, serialStart, serialEnd;
+      double cudaStart, cudaEnd, serialFunctionStart, serialFunctionEnd, serialStart, serialEnd, serialInitStart, serialInitEnd, ompInitStart, ompInitEnd;
       
       // Device memory allocation
       cudaMalloc(&devX, dataPoints*sizeof(float));
@@ -125,11 +124,11 @@ int main(int argc, char **argv)
       
  
       //print out the Cuda+OMP result and timing
-      /*for(i=0; i < dataPoints+1; i++)
+      for(i=0; i < dataPoints+1; i++)
       {
          printf("X = %0.5f \n", X[i]);
          printf("Y = %0.5f \n", Y[i]);
-      }*/
+      }
 
       //start serial timings
       serialStart = omp_get_wtime();
