@@ -19,17 +19,17 @@ __global__ void exponentialFunction (int dataPoints, float *devX, float *devY)
 }
 
 // Serial Code
-void serialFunction (int dataPoints, float *X, float *Y)
+void serialFunction (int dataPoints, float *serialX, float *serialY)
 {
    float first, second, third;
    int i;
 
    for(i=0; i < dataPoints+1; i++)
       {
-         first = ((X[i]-2))*((X[i]-2));
-         second = (pow((X[i]-6),2)/10);
-         third = (1/(pow(X[i],2)+1));
-         Y[i] = (exp(-first)+exp(-second)+third);
+         first = ((serialX[i]-2))*((serialX[i]-2));
+         second = (pow((serialX[i]-6),2)/10);
+         third = (1/(pow(serialX[i],2)+1));
+         serialY[i] = (exp(-first)+exp(-second)+third);
       }
 
    printf("ran serial code \n");
@@ -46,8 +46,9 @@ int main(int argc, char **argv)
       int dataPoints = strtol(argv[1], NULL, 10);
      
       // X and F(x) as Y declaration
-      float *X, *Y;
+      float *X, *Y, *serialX, *serialY;
       float *devX, *devY;
+      float maxY, serialMaxY;
   
       //create cuda timing objects
       cudaEvent_t startCuda, stopCuda;
@@ -64,6 +65,8 @@ int main(int argc, char **argv)
       //Host Memory Allocation
       X = (float *) malloc(sizeof(float)*dataPoints);
       Y = (float *) malloc(sizeof(float)*dataPoints);
+      serialX = (float *) malloc(sizeof(float)*dataPoints);
+      serialY = (float *) malloc(sizeof(float)*dataPoints);
       
       //Start executing
       cudaStart = omp_get_wtime();	
