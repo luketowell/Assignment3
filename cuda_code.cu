@@ -80,7 +80,9 @@ int main(int argc, char **argv)
       printf("using %d threads on %d blocks \n", threads, blocks);
 
       //OMP timing variables
-      double cudaStart, cudaEnd, serialFunctionStart, serialFunctionEnd, serialStart, serialEnd, serialInitStart, serialInitEnd, ompInitStart, ompInitEnd, ompMaxStart, ompMaxEnd, serialMaxStart, serialMaxEnd;
+      double cudaStart, cudaInitEnd,cudaFuncMemStart, cudaFuncMemEnd, cudaEnd;
+      double serialFunctionStart, serialFunctionEnd, serialStart, serialEnd, serialInitStart, serialInitEnd, serialMaxStart, serialMaxEnd;
+      double ompInitStart, ompInitEnd, ompMaxStart, ompMaxEnd;
       
       // Device memory allocation
       cudaMalloc(&devX, dataPoints*sizeof(float));
@@ -106,7 +108,7 @@ int main(int argc, char **argv)
       cudaEventRecord(cudaIEnd);
       cudaEventSynchronize(cudaIEnd);
       cudaMemcpy(cudaX, devCudaX, dataPoints*sizeof(float), cudaMemcpyDeviceToHost);
-
+      cudaInitEnd = omp_get_wtime();	
 
       //cuda initialisation timing
       float iTime;
@@ -122,10 +124,11 @@ int main(int argc, char **argv)
           }
       }
       ompInitEnd = omp_get_wtime();
-
+      
+      cudaFuncMemStart = omp_get_wtime();
       // Copy the host contents of X over to device devX
       cudaMemcpy(devX, X, dataPoints*sizeof(float), cudaMemcpyHostToDevice);	
-
+    
       // Check for errors after Copying X over to new Device
       cudaError err = cudaGetLastError();
       if (err != cudaSuccess) {
@@ -148,7 +151,7 @@ int main(int argc, char **argv)
 
       // Copy over the Y value from the device to the host
       cudaMemcpy(Y, devY, dataPoints*sizeof(float), cudaMemcpyDeviceToHost);
-   
+      cudaFuncMemEnd=omp_get_wtime();
       //Check for errors after copying errors over from device to host.
       err = cudaGetLastError();
       if (err != cudaSuccess) {
@@ -211,8 +214,10 @@ int main(int argc, char **argv)
       serialEnd = omp_get_wtime();
       
       //total timings
-      printf("cuda init %0.8f\n", iTime);
+      printf("cuda init kernel with memory transfer: %0.5f\n", (cudaInitEnd - cudaStart)*1000);
+      printf("cuda init kernel : %0.8f\n", iTime);
       printf("omp init %0.5f\n", (ompInitEnd - ompInitStart)*1000);
+      printf("cuda function with memory transfer: %0.5f\n", (cudaFuncMemEnd - cudaFuncMemStart)*1000);
       printf("cuda function: %0.5f\n", cTime);
       printf("omp max calc: %0.5f\n", (ompMaxEnd - ompMaxStart)*1000);
       printf("total cuda Time: %0.5f\n", (cudaEnd - cudaStart)*1000);
