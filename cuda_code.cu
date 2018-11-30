@@ -139,7 +139,7 @@ int main(int argc, char **argv)
       cudaEventRecord(startCuda, 0);
 
       //Call the function kernel
-      exponentialFunction<<<blocks,threads>>> (dataPoints, devX, devY);
+      exponentialFunction<<<blocks,threads>>> (dataPoints, devCudaX, devY);
       //Stop the Cuda Timings
       cudaEventRecord(stopCuda);
       cudaEventSynchronize(stopCuda);
