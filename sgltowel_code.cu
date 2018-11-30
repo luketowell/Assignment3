@@ -38,13 +38,20 @@ void serialFunction (int dataPoints, float *serialX, float *serialY)
 int main(int argc, char **argv)
 {
    int i, numGPU;
-	
+   	
    cudaGetDeviceCount(&numGPU);
    if (numGPU >= 1) {
-
+      // Steps between the two outer values e.g. -100 and +100.
       float steps = 200;
+
+      // set the amoutn of dataPoints that you want to discretize the function over
       int dataPoints = strtol(argv[1], NULL, 10);
-     
+
+      //set number of omp threads to be used;
+      omp_set_num_threads(12);
+      int ompthreads = omp_get_max_threads();
+      printf("number of omp threads = %d", ompthreads);
+ 
       // X and F(x) as Y declaration
       float *X, *Y, *serialX, *serialY;
       float *devX, *devY;
