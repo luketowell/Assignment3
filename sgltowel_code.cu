@@ -63,7 +63,7 @@ int main(int argc, char **argv)
       cudaEventCreate(&stopCuda);
 
       //OMP timing variables
-      double cudaStart, cudaEnd, serialFunctionStart, serialFunctionEnd, serialStart, serialEnd, serialInitStart, serialInitEnd, ompInitStart, ompInitEnd;
+      double cudaStart, cudaEnd, serialFunctionStart, serialFunctionEnd, serialStart, serialEnd, serialInitStart, serialInitEnd, ompInitStart, ompInitEnd, ompMaxStart, ompMaxEnd, serialMaxStart, serialMaxEnd;
       
       // Device memory allocation
       cudaMalloc(&devX, dataPoints*sizeof(float));
@@ -82,9 +82,12 @@ int main(int argc, char **argv)
 
       //discretise the range to work out X[i]
       ompInitStart = omp_get_wtime();
-      #pragma omp parallel for default(none) shared(dataPoints, X, discretePoint) private(i)
-      for (i= 0; i < dataPoints+1; i++){
-         X[i] = (discretePoint * i)-100;
+      #pragma omp parallel default(none) shared(dataPoints, X, discretePoint)
+      {
+          #pragma omp for private(i) schedule(static, 1)
+          for (i= 0; i < (dataPoints+1); i++){
+             X[i] = (discretePoint * i)-100;
+          }
       }
       ompInitEnd = omp_get_wtime();
 
@@ -100,6 +103,7 @@ int main(int argc, char **argv)
       //Work out threads and blocks and print out number of threads and blocks
       int threads = strtol(argv[2], NULL, 10);
       int blocks = ceil((float)dataPoints/(float)threads);
+
       printf("using %d threads on %d blocks \n", threads, blocks);
 
 
@@ -134,8 +138,8 @@ int main(int argc, char **argv)
       float cTime;
       cudaEventElapsedTime(&cTime, startCuda, stopCuda);
       
- 
-      //print out the Cuda+OMP result and timing
+      ompMaxStart = omp_get_wtime();
+      //print out the Cuda+OMP result
       #pragma omp parallel for default(none) shared(Y, dataPoints) private(i) reduction(max: maxY) 
       for(i=0; i < dataPoints+1; i++)
       {
@@ -143,6 +147,7 @@ int main(int argc, char **argv)
              maxY = Y[i];
          }
       }
+      ompMaxEnd = omp_get_wtime();
       //end of cuda+omp implementation
       cudaEnd = omp_get_wtime();
 
@@ -166,7 +171,8 @@ int main(int argc, char **argv)
       serialFunctionStart = omp_get_wtime(); 
       serialFunction(dataPoints,serialX, serialY);
       serialFunctionEnd = omp_get_wtime();
-
+      
+      serialMaxStart = omp_get_wtime();
       //work out max in serial
       for(i=0; i < dataPoints+1; i++)
       {
@@ -174,6 +180,7 @@ int main(int argc, char **argv)
              serialMaxY = Y[i];
          }
       }
+      serialMaxEnd = omp_get_wtime();
 
       //end serial timings
       serialEnd = omp_get_wtime();
@@ -181,12 +188,14 @@ int main(int argc, char **argv)
       //total timings
       printf("omp init %0.5f\n", (ompInitEnd - ompInitStart)*1000);
       printf("cuda function: %0.5f\n", cTime);
+      printf("omp max calc: %0.5f\n", (ompMaxEnd - ompMaxStart)*1000);
       printf("total cuda Time: %0.5f\n", (cudaEnd - cudaStart)*1000);
       printf("serial init %0.5f\n", (serialInitEnd - serialInitStart)*1000);
       printf("serial function: %0.5f\n", (serialFunctionEnd-serialFunctionStart)*1000);
+      printf("serial max calc: %0.5f\n", (serialMaxEnd - serialMaxStart)*1000);
       printf("all serial: %0.5f \n", (serialEnd - serialStart) * 1000);
-      printf("cuda+omp maxY: %0.5f\n", maxY);
-      printf("serial maxY: %0.5f\n", serialMaxY);
+      printf("cuda+omp maxY: %0.8f\n", maxY);
+      printf("serial maxY: %0.8f\n", serialMaxY);
 
    }
    else
