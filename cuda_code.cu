@@ -59,6 +59,7 @@ int main(int argc, char **argv)
       //set number of omp threads to be used;
       omp_set_num_threads(12);
       int ompthreads = omp_get_max_threads();
+      int potentialBlocks, maxBlocks = 65535; 
       printf("number of omp threads = %d", ompthreads);
  
       // X and F(x) as Y declaration
@@ -74,8 +75,11 @@ int main(int argc, char **argv)
       cudaEventCreate(&stopCuda);
       
       //Work out threads and blocks and print out number of threads and blocks
+
       int threads = strtol(argv[2], NULL, 10);
-      int blocks = ceil((float)dataPoints/(float)threads);
+      // Ternary statement for working out amout of blocks to be used.
+      potentialBlocks = ceil((float)dataPoints/(float)threads);
+      int blocks = (potentialBlocks<maxBlocks) ? potentialBlocks : maxBlocks ;
 
       printf("using %d threads on %d blocks \n", threads, blocks);
 
