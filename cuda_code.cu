@@ -27,42 +27,72 @@ __global__ void initX (float *X, int dataPoints, float discretePoint, int thread
     }
 }
 
-// Serial Code
-void serialFunction (int dataPoints, float *serialX, float *serialY)
-{
-   float first, second, third;
-   int i;
-
-   for(i=0; i < dataPoints+1; i++)
-      {
-         first = ((serialX[i]-2))*((serialX[i]-2));
-         second = (pow((serialX[i]-6),2)/10);
-         third = (1/(pow(serialX[i],2)+1));
-         serialY[i] = (exp(-first)+exp(-second)+third);
-      }
-
-   printf("ran serial code \n");
-}
-
 int main(int argc, char **argv)
-{
+{   
    int i, numGPU;
-   	
+   // Steps between the two outer values e.g. -100 and +100.
+   float steps = 200;
+   // set the amount of dataPoints that you want to discretize the function over
+   int dataPoints = strtol(argv[1], NULL, 10);
+
+   //all serial code
+   float *serialX, *serialY;
+   float serialMaxY, serialFirst, serialSecond, serialThird;
+
+   double serialFunctionStart, serialFunctionEnd, serialStart, serialEnd, serialInitStart, serialInitEnd, serialMaxStart, serialMaxEnd;
+   
+   serialX = (float *) malloc(sizeof(float)*dataPoints);
+   serialY = (float *) malloc(sizeof(float)*dataPoints);
+   //start serial timings
+   serialStart = omp_get_wtime();
+   
+   //work out discrete point again for serial
+   float serialDiscretePoint = steps/dataPoints;
+
+   //discretise the range to work out X[i]
+   serialInitStart = omp_get_wtime();
+
+   for (i= 0; i < dataPoints+1; i++){
+     serialX[i] = (serialDiscretePoint * i)-100;
+   }
+   
+   serialInitEnd = omp_get_wtime();
+
+   //work out F(x) as Y serial code:
+   serialFunctionStart = omp_get_wtime(); 
+   
+   for(i=0; i < dataPoints+1; i++)
+   {
+      serialFirst = ((serialX[i]-2))*((serialX[i]-2));
+      serialSecond = (pow((serialX[i]-6),2)/10);
+      serialThird = (1/(pow(serialX[i],2)+1));
+      serialY[i] = (exp(-serialFirst)+exp(-serialSecond)+serialThird);
+   }
+   serialFunctionEnd = omp_get_wtime();
+   
+   serialMaxStart = omp_get_wtime();
+   //work out max in serial
+   for(i=0; i < dataPoints+1; i++)
+   {
+      if (serialY[i] > serialMaxY){
+          serialMaxY = serialY[i];
+      }
+    }
+   serialMaxEnd = omp_get_wtime();
+
+   //end serial timings
+   serialEnd = omp_get_wtime();
+   
+   //Start cuda code execution
    cudaGetDeviceCount(&numGPU);
    if (numGPU >= 1) {
-      // Steps between the two outer values e.g. -100 and +100.
-      float steps = 200;
-
-      // set the amount of dataPoints that you want to discretize the function over
-      int dataPoints = strtol(argv[1], NULL, 10);
-
       //set number of omp threads to be used;
       omp_set_num_threads(1);
  
       // X and F(x) as Y declaration
-      float *X, *Y, *serialX, *serialY;
+      float *X, *Y;
       float *devX, *devY;
-      float maxY, serialMaxY;
+      float maxY;
   
       //create cuda timing objects
       cudaEvent_t cudaIStart, cudaIEnd, startCuda, stopCuda;
