@@ -18,12 +18,12 @@ __global__ void exponentialFunction (int dataPoints, float *devX, float *devY)
 	
 }
 
-__global__ void initX (float *devCudaX, int dataPoints, float discretePoint, int threads)
+__global__ void initX (float *devX, int dataPoints, float discretePoint, int threads)
 {
     int my_i = blockIdx.x*blockDim.x + threadIdx.x;
  
     if (my_i < dataPoints+1){
-       devCudaX[my_i] = (discretePoint * my_i)-100; 
+       devX[my_i] = (discretePoint * my_i)-100; 
     }
 }
 
@@ -59,7 +59,6 @@ int main(int argc, char **argv)
       //set number of omp threads to be used;
       omp_set_num_threads(12);
       int ompthreads = omp_get_max_threads();
-      int potentialBlocks, maxBlocks = 65535; 
       printf("number of omp threads = %d", ompthreads);
  
       // X and F(x) as Y declaration
@@ -74,9 +73,10 @@ int main(int argc, char **argv)
       cudaEventCreate(&startCuda);
       cudaEventCreate(&stopCuda);
       
-      //Work out threads and blocks and print out number of threads and blocks
-
+      //declare and work out the number of threads and blocks.
+      int potentialBlocks, maxBlocks = 65535; 
       int threads = strtol(argv[2], NULL, 10);
+
       // Ternary statement for working out amout of blocks to be used.
       potentialBlocks = ceil((float)dataPoints/(float)threads);
       int blocks = (potentialBlocks<maxBlocks) ? potentialBlocks : maxBlocks ;
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
       //OMP timing variables
       double cudaStart, cudaInitEnd,cudaFuncMemStart, cudaFuncMemEnd, cudaEnd;
       double serialFunctionStart, serialFunctionEnd, serialStart, serialEnd, serialInitStart, serialInitEnd, serialMaxStart, serialMaxEnd;
-      double ompInitStart, ompInitEnd, ompMaxStart, ompMaxEnd;
+      double ompMaxStart, ompMaxEnd;
       
       // Device memory allocation
       cudaMalloc(&devX, dataPoints*sizeof(float));
@@ -107,28 +107,17 @@ int main(int argc, char **argv)
       //init the values of X cuda timings
       cudaEventRecord(cudaIStart,0);
 
-      initX<<<blocks, threads>>>(devCudaX, dataPoints, discretePoint, threads);
+      initX<<<blocks, threads>>>(devX, dataPoints, discretePoint, threads);
       
       cudaEventRecord(cudaIEnd);
       cudaEventSynchronize(cudaIEnd);
-      cudaMemcpy(cudaX, devCudaX, dataPoints*sizeof(float), cudaMemcpyDeviceToHost);
+      cudaMemcpy(X, devX, dataPoints*sizeof(float), cudaMemcpyDeviceToHost);
       cudaInitEnd = omp_get_wtime();	
 
       //cuda initialisation timing
       float iTime;
       cudaEventElapsedTime(&iTime, cudaIStart, cudaIEnd);
     
-      //discretise the range to work out X[i]
-      ompInitStart = omp_get_wtime();
-      #pragma omp parallel default(none) shared(dataPoints, X, discretePoint)
-      {
-          #pragma omp for private(i) schedule(static, 1)
-          for (i= 0; i < (dataPoints+1); i++){
-             X[i] = (discretePoint * i)-100;
-          }
-      }
-      ompInitEnd = omp_get_wtime();
-      
       cudaFuncMemStart = omp_get_wtime();
       // Copy the host contents of X over to device devX
       cudaMemcpy(devX, X, dataPoints*sizeof(float), cudaMemcpyHostToDevice);	
@@ -143,7 +132,7 @@ int main(int argc, char **argv)
       cudaEventRecord(startCuda, 0);
 
       //Call the function kernel
-      exponentialFunction<<<blocks,threads>>> (dataPoints, devCudaX, devY);
+      exponentialFunction<<<blocks,threads>>> (dataPoints, devX, devY);
       //Stop the Cuda Timings
       cudaEventRecord(stopCuda);
       cudaEventSynchronize(stopCuda);
