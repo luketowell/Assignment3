@@ -62,8 +62,8 @@ int main(int argc, char **argv)
       printf("number of omp threads = %d", ompthreads);
  
       // X and F(x) as Y declaration
-      float *X, *Y, *serialX, *serialY, *cudaX;
-      float *devX, *devY, *devCudaX;
+      float *X, *Y, *serialX, *serialY;
+      float *devX, *devY;
       float maxY, serialMaxY;
   
       //create cuda timing objects
@@ -91,10 +91,8 @@ int main(int argc, char **argv)
       // Device memory allocation
       cudaMalloc(&devX, dataPoints*sizeof(float));
       cudaMalloc(&devY, dataPoints*sizeof(float));
-      cudaMalloc(&devCudaX, dataPoints*sizeof(float));
 
       //Host Memory Allocation
-      cudaX = (float *) malloc(sizeof(float)*dataPoints);
       X = (float *) malloc(sizeof(float)*dataPoints);
       Y = (float *) malloc(sizeof(float)*dataPoints);
       serialX = (float *) malloc(sizeof(float)*dataPoints);
@@ -151,7 +149,7 @@ int main(int argc, char **argv)
         printf("(3) CUDA RT error: %s \n", cudaGetErrorString(err));
       }
 
-      //clean up memory
+      //clean up device memory
       cudaFree(devX);
       cudaFree(devY);
 	
@@ -209,7 +207,6 @@ int main(int argc, char **argv)
       //total timings
       printf("cuda init kernel with memory transfer: %0.5f\n", (cudaInitEnd - cudaStart)*1000);
       printf("cuda init kernel : %0.8f\n", iTime);
-      printf("omp init %0.5f\n", (ompInitEnd - ompInitStart)*1000);
       printf("cuda function with memory transfer: %0.5f\n", (cudaFuncMemEnd - cudaFuncMemStart)*1000);
       printf("cuda function: %0.5f\n", cTime);
       printf("omp max calc: %0.5f\n", (ompMaxEnd - ompMaxStart)*1000);
