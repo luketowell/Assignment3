@@ -113,7 +113,6 @@ int main(int argc, char **argv)
 
       //OMP timing variables
       double cudaStart, cudaInitEnd,cudaFuncMemStart, cudaFuncMemEnd, cudaEnd;
-      double serialFunctionStart, serialFunctionEnd, serialStart, serialEnd, serialInitStart, serialInitEnd, serialMaxStart, serialMaxEnd;
       double ompMaxStart, ompMaxEnd;
       
       // Device memory allocation
@@ -123,8 +122,7 @@ int main(int argc, char **argv)
       //Host Memory Allocation
       X = (float *) malloc(sizeof(float)*dataPoints);
       Y = (float *) malloc(sizeof(float)*dataPoints);
-      serialX = (float *) malloc(sizeof(float)*dataPoints);
-      serialY = (float *) malloc(sizeof(float)*dataPoints);
+      
       
       //Start executing
       cudaStart = omp_get_wtime();	
