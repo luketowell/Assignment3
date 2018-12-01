@@ -194,57 +194,27 @@ int main(int argc, char **argv)
       //end of cuda+omp implementation
       cudaEnd = omp_get_wtime();
 
-      //start serial timings
-      serialStart = omp_get_wtime();
-      
-      //work out discrete point again for serial
-      float serialDiscretePoint = steps/dataPoints;
-
-
-      //discretise the range to work out X[i]
-      serialInitStart = omp_get_wtime();
-
-      for (i= 0; i < dataPoints+1; i++){
-        serialX[i] = (serialDiscretePoint * i)-100;
-      }
-      
-      serialInitEnd = omp_get_wtime();
-
-      //call the serial code:
-      serialFunctionStart = omp_get_wtime(); 
-      serialFunction(dataPoints,serialX, serialY);
-      serialFunctionEnd = omp_get_wtime();
-      
-      serialMaxStart = omp_get_wtime();
-      //work out max in serial
-      for(i=0; i < dataPoints+1; i++)
-      {
-         if (serialY[i] > serialMaxY){
-             serialMaxY = Y[i];
-         }
-      }
-      serialMaxEnd = omp_get_wtime();
-
-      //end serial timings
-      serialEnd = omp_get_wtime();
-      
       //total timings
-      printf("cuda init kernel with memory transfer: %0.5f\n", (cudaInitEnd - cudaStart)*1000);
-      printf("cuda init kernel : %0.8f\n", iTime);
-      printf("cuda function with memory transfer: %0.5f\n", (cudaFuncMemEnd - cudaFuncMemStart)*1000);
-      printf("cuda function: %0.5f\n", cTime);
-      printf("omp max calc: %0.5f\n", (ompMaxEnd - ompMaxStart)*1000);
-      printf("total cuda Time: %0.5f\n", (cudaEnd - cudaStart)*1000);
-      printf("serial init %0.5f\n", (serialInitEnd - serialInitStart)*1000);
-      printf("serial function: %0.5f\n", (serialFunctionEnd-serialFunctionStart)*1000);
-      printf("serial max calc: %0.5f\n", (serialMaxEnd - serialMaxStart)*1000);
-      printf("all serial: %0.5f \n", (serialEnd - serialStart) * 1000);
-      printf("cuda+omp maxY: %0.8f\n", maxY);
-      printf("serial maxY: %0.8f\n", serialMaxY);
-
+      printf("~~~~~~~~~~~~~~~~~~~~~~~~~ Results of Run ~~~~~~~~~~~~~~~~~~~~~~~\n");
+      printf("|  Program Step  | Kernel + Mem  |    Kernel   |    Serial     |\n");
+      printf("|______________________________________________________________|\n");
+      printf("| Init of X      |  %0.8f  |  %0.8f |  %0.8f |\n", (cudaInitEnd - cudaStart)*1000, iTime, (serialInitEnd - serialInitStart)*1000);
+      printf("| Calculate F(x) |  %0.8f  | %0.8f | %0.8f |\n", (cudaFuncMemEnd - cudaFuncMemStart)*1000, cTime, (serialFunctionEnd-serialFunctionStart)*1000);
+      printf("| Max of F(x)    | ~~~~ N/A ~~~~ | %0.8f |   %0.8f |\n", (ompMaxEnd - ompMaxStart)*1000, (serialMaxEnd - serialMaxStart)*1000);
+      printf("|______________________________________________________________|\n");
+      printf("|                |      Cuda + OMP      |      Serial Code     |\n", (ompMaxEnd - ompMaxStart)*1000, (serialMaxEnd - serialMaxStart)*1000);
+      printf("| Total Time     |     %0.8f     |     %0.8f    |\n", (cudaEnd - cudaStart)*1000, (serialEnd - serialStart) * 1000);
+      printf("| Max Value F(x) |       %0.8f     |        %0.8f    |\n", maxY, serialMaxY); 
+      printf("|______________________________________________________________|\n");
    }
    else
    {
-    printf("No GPUs are detected!\n");
+    printf("serial init %0.5f\n", (serialInitEnd - serialInitStart)*1000);
+    printf("Unfortunately no GPUs are detected!\n");
+    printf("Here are the serial results!\n");
+    printf("serial function: %0.5f\n", (serialFunctionEnd-serialFunctionStart)*1000);
+    printf("serial max calc: %0.5f\n", (serialMaxEnd - serialMaxStart)*1000);
+    printf("all serial: %0.5f \n", (serialEnd - serialStart) * 1000);
+    printf("serial maxY: %0.8f\n", serialMaxY);
    }
 }
