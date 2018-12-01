@@ -4,26 +4,26 @@
 #include <stdlib.h>
 
 // Code for the parallel CUDA code
-__global__ void exponentialFunction (int dataPoints, float *devX, float *devY)
+__global__ void exponentialFunction (int dataPoints, float *X, float *Y)
 {
    float first, second, third;
    int my_i = blockIdx.x*blockDim.x + threadIdx.x;
 	
    if (my_i<dataPoints+1){
-      first = ((devX[my_i]-2))*((devX[my_i]-2));
-      second = (pow((devX[my_i]-6.0),2)/10);
-      third = (1/(pow((double)devX[my_i],2.0)+1)); 
-      devY[my_i] = (expf(-first)+expf(-second)+third);
+      first = ((X[my_i]-2))*((X[my_i]-2));
+      second = (pow((X[my_i]-6.0),2)/10);
+      third = (1/(pow((double)X[my_i],2.0)+1)); 
+      Y[my_i] = (expf(-first)+expf(-second)+third);
    }
 	
 }
 
-__global__ void initX (float *devX, int dataPoints, float discretePoint, int threads)
+__global__ void initX (float *X, int dataPoints, float discretePoint, int threads)
 {
     int my_i = blockIdx.x*blockDim.x + threadIdx.x;
  
     if (my_i < dataPoints+1){
-       devX[my_i] = (discretePoint * my_i)-100; 
+        X[my_i] = (discretePoint * my_i)-100; 
     }
 }
 
