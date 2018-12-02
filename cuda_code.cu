@@ -85,9 +85,11 @@ int main(int argc, char **argv)
    
    //Start cuda code execution
    cudaGetDeviceCount(&numGPU);
+   printf("numGPU, %d\n",numGPU);
    if (numGPU >= 1) {
       //set number of omp threads to be used;
-      omp_set_num_threads(1);
+      int numOMPThreads = strtol(argv[3], NULL, 10); 
+      omp_set_num_threads(numOMPThreads);
  
       // X and F(x) as Y declaration
       float *X, *Y;
@@ -108,8 +110,17 @@ int main(int argc, char **argv)
       // Ternary statement for working out amout of blocks to be used.
       potentialBlocks = ceil((float)dataPoints/(float)threads);
       int blocks = (potentialBlocks<maxBlocks) ? potentialBlocks : maxBlocks ;
+      
+      //statement to ensure enough threads are used.
+      
+      if(blocks==maxBlocks){
+        int minThreads = ceil((float)dataPoints/(float)blocks);
+        threads = minThreads;
+        printf("You have not requested enough threads for the program to execute accurately.\n We are using the minimum number of threads required which for your data size is : %d\n", minThreads);
+      }	
 
-      printf("using %d threads on %d blocks \n", threads, blocks);
+
+      printf("Discretizing the function across %d datapoints using %d threads on %d blocks \n", dataPoints, threads, blocks);
 
       //OMP timing variables
       double cudaStart, cudaInitEnd,cudaFuncMemStart, cudaFuncMemEnd, cudaEnd;
