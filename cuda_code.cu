@@ -27,6 +27,10 @@ __global__ void initX (float *X, int dataPoints, float discretePoint, int thread
     }
 }
 
+__global__ void findMaxY (float *Y, int dataPoints, float *max_Y) {
+
+}
+
 int main(int argc, char **argv)
 {   
    int i, numGPU;
