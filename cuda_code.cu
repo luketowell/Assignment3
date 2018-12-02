@@ -27,10 +27,6 @@ __global__ void initX (float *X, int dataPoints, float discretePoint, int thread
     }
 }
 
-__global__ void findMaxY (float *Y, int dataPoints, float *max_Y) {
-
-}
-
 int main(int argc, char **argv)
 {   
    int i, numGPU;
@@ -94,9 +90,9 @@ int main(int argc, char **argv)
       omp_set_num_threads(1);
  
       // X and F(x) as Y declaration
-      float *X, *Y, *maxY;
-      float *devX, *devY, *devMaxY;
-      //float maxY;
+      float *X, *Y;
+      float *devX, *devY;
+      float maxY;
   
       //create cuda timing objects
       cudaEvent_t cudaIStart, cudaIEnd, startCuda, stopCuda;
@@ -122,7 +118,6 @@ int main(int argc, char **argv)
       // Device memory allocation
       cudaMalloc(&devX, dataPoints*sizeof(float));
       cudaMalloc(&devY, dataPoints*sizeof(float));
-      cudaMalloc(&devMaxY,sizeof(float));
 
       //Host Memory Allocation
       X = (float *) malloc(sizeof(float)*dataPoints);
@@ -174,17 +169,10 @@ int main(int argc, char **argv)
         printf("(3) CUDA RT error: %s \n", cudaGetErrorString(err));
       }
 
-      //copy over Y to the findMaxY Kernel
-      cudaMemcpy(devY, Y, dataPoints*sizeof(float), cudaMemcpyHostToDevice);
-      // Run findMaxY Kernel
-      findMaxY<<<blocks, threads>>>(devY, dataPoints, devMaxY);     
-      //Copy back the value of devMaxY
-      cudaMemcpy(maxY, devMaxY, sizeof(float), cudaMemcpyDeviceToHost); 
-
       //clean up device memory
       cudaFree(devX);
       cudaFree(devY);
-      cudaFree(dexMaxY);	 
+	
       //Work out time
       //CUDA initialisation timing
       float iTime;
