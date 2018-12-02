@@ -1,8 +1,8 @@
 usage(){
-        echo $0  numOMPThreads numGPUThreads arrayLength 
+        echo $0  numOMPThreads numGPUThreads
 }
 
-if [[ $# -ne 3 ]]; then
+if [[ $# -ne 2 ]]; then
         usage
         exit -1
 fi
