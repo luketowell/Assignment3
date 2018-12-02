@@ -94,9 +94,9 @@ int main(int argc, char **argv)
       omp_set_num_threads(1);
  
       // X and F(x) as Y declaration
-      float *X, *Y;
-      float *devX, *devY;
-      float maxY;
+      float *X, *Y, *maxY;
+      float *devX, *devY, *devMaxY;
+      //float maxY;
   
       //create cuda timing objects
       cudaEvent_t cudaIStart, cudaIEnd, startCuda, stopCuda;
@@ -122,6 +122,7 @@ int main(int argc, char **argv)
       // Device memory allocation
       cudaMalloc(&devX, dataPoints*sizeof(float));
       cudaMalloc(&devY, dataPoints*sizeof(float));
+      cudaMalloc(&devMaxY,sizeof(float));
 
       //Host Memory Allocation
       X = (float *) malloc(sizeof(float)*dataPoints);
