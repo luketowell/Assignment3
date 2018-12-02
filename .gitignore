@@ -1,2 +1,4 @@
 //Added in ignore for the executable files
 *.exe
+Added in the nvvp files which have been produced.
+*.nvvp
