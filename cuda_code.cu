@@ -174,10 +174,17 @@ int main(int argc, char **argv)
         printf("(3) CUDA RT error: %s \n", cudaGetErrorString(err));
       }
 
+      //copy over Y to the findMaxY Kernel
+      cudaMemcpy(devY, Y, dataPoints*sizeof(float), cudaMemcpyHostToDevice);
+      // Run findMaxY Kernel
+      findMaxY<<<blocks, threads>>>(devY, dataPoints, devMaxY);     
+      //Copy back the value of devMaxY
+      cudaMemcpy(maxY, devMaxY, sizeof(float), cudaMemcpyDeviceToHost); 
+
       //clean up device memory
       cudaFree(devX);
       cudaFree(devY);
-	
+      cudaFree(dexMaxY);	 
       //Work out time
       //CUDA initialisation timing
       float iTime;
