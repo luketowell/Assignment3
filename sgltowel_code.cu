@@ -115,11 +115,11 @@ int main(int argc, char **argv)
       if(blocks==maxBlocks){
         int minThreads = ceil((float)dataPoints/(float)blocks);
         threads = minThreads;
-        printf("Fxou have not requested enough threads for the program to execute accurately.\n We are using the minimum number of threads required which for your data size is : %d\n", minThreads);
+        printf("You have not requested enough threads for the program to execute accurately.\n We are using the minimum number of threads required which for your data size is : %d\n", minThreads);
       }	
 
 
-      printf("Discretizing the function across %d datapoints using %d threads on %d blocks \n", dataPoints, threads, blocks);
+      printf("Discretizing the function across %d data points using %d threads on %d blocks \n", dataPoints, threads, blocks);
 
       //OMP timing variables
       double cudaStart, cudaInitEnd,cudaFuncMemStart, cudaFuncMemEnd, cudaEnd;
@@ -212,7 +212,7 @@ int main(int argc, char **argv)
       printf("| Calculate F(x) |  %0.8f  | %0.8f | %0.8f |\n", (cudaFuncMemEnd - cudaFuncMemStart)*1000, cTime, (serialFunctionEnd-serialFunctionStart)*1000);
       printf("| Max of F(x)    | ~~~~ N/A ~~~~ | %0.8f |   %0.8f |\n", (ompMaxEnd - ompMaxStart)*1000, (serialMaxEnd - serialMaxStart)*1000);
       printf("|______________________________________________________________|\n");
-      printf("|                |      Cuda + OMP      |      Serial Code     |\n", (ompMaxEnd - ompMaxStart)*1000, (serialMaxEnd - serialMaxStart)*1000);
+      printf("|                |      CUDA + OMP      |      Serial Code     |\n", (ompMaxEnd - ompMaxStart)*1000, (serialMaxEnd - serialMaxStart)*1000);
       printf("| Total Time     |     %0.8f     |     %0.8f    |\n", (cudaEnd - cudaStart)*1000, (serialEnd - serialStart) * 1000);
       printf("| Max Value F(x) |       %0.8f     |        %0.8f    |\n", maxFx, serialMaxFx); 
       printf("|______________________________________________________________|\n");
