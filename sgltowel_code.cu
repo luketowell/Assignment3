@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 // Code for the parallel CUDA code
-__global__ void exponentialFunction (int dataPoints, float *X, float *Y)
+__global__ void exponentialFunction (int dataPoints, float *X, float *Fx)
 {
    float first, second, third;
    int my_i = blockIdx.x*blockDim.x + threadIdx.x;
@@ -13,7 +13,7 @@ __global__ void exponentialFunction (int dataPoints, float *X, float *Y)
       first = ((X[my_i]-2))*((X[my_i]-2));
       second = (pow((X[my_i]-6.0),2)/10);
       third = (1/(pow((double)X[my_i],2.0)+1)); 
-      Y[my_i] = (expf(-first)+expf(-second)+third);
+      Fx[my_i] = (expf(-first)+expf(-second)+third);
    }
 	
 }
@@ -36,13 +36,13 @@ int main(int argc, char **argv)
    int dataPoints = strtol(argv[1], NULL, 10);
 
    //all serial code
-   float *serialX, *serialY;
-   float serialMaxY, serialFirst, serialSecond, serialThird;
+   float *serialX, *serialFx;
+   float serialMaxFx, serialFirst, serialSecond, serialThird;
 
    double serialFunctionStart, serialFunctionEnd, serialStart, serialEnd, serialInitStart, serialInitEnd, serialMaxStart, serialMaxEnd;
    
    serialX = (float *) malloc(sizeof(float)*dataPoints);
-   serialY = (float *) malloc(sizeof(float)*dataPoints);
+   serialFx = (float *) malloc(sizeof(float)*dataPoints);
    //start serial timings
    serialStart = omp_get_wtime();
    
@@ -58,7 +58,7 @@ int main(int argc, char **argv)
    
    serialInitEnd = omp_get_wtime();
 
-   //work out F(x) as Y serial code:
+   //work out F(x) as Fx serial code:
    serialFunctionStart = omp_get_wtime(); 
    
    for(i=0; i < dataPoints+1; i++)
@@ -66,7 +66,7 @@ int main(int argc, char **argv)
       serialFirst = ((serialX[i]-2))*((serialX[i]-2));
       serialSecond = (pow((serialX[i]-6),2)/10);
       serialThird = (1/(pow(serialX[i],2)+1));
-      serialY[i] = (exp(-serialFirst)+exp(-serialSecond)+serialThird);
+      serialFx[i] = (exp(-serialFirst)+exp(-serialSecond)+serialThird);
    }
    serialFunctionEnd = omp_get_wtime();
    
@@ -74,8 +74,8 @@ int main(int argc, char **argv)
    //work out max in serial
    for(i=0; i < dataPoints+1; i++)
    {
-      if (serialY[i] > serialMaxY){
-          serialMaxY = serialY[i];
+      if (serialFx[i] > serialMaxFx){
+          serialMaxFx = serialFx[i];
       }
     }
    serialMaxEnd = omp_get_wtime();
@@ -90,10 +90,10 @@ int main(int argc, char **argv)
       int numOMPThreads = strtol(argv[3], NULL, 10); 
       omp_set_num_threads(numOMPThreads);
  
-      // X and F(x) as Y declaration
-      float *X, *Y;
-      float *devX, *devY;
-      float maxY;
+      // X and F(x) as Fx declaration
+      float *X, *Fx;
+      float *devX, *devFx;
+      float maxFx;
   
       //create cuda timing objects
       cudaEvent_t cudaIStart, cudaIEnd, startCuda, stopCuda;
@@ -115,7 +115,7 @@ int main(int argc, char **argv)
       if(blocks==maxBlocks){
         int minThreads = ceil((float)dataPoints/(float)blocks);
         threads = minThreads;
-        printf("You have not requested enough threads for the program to execute accurately.\n We are using the minimum number of threads required which for your data size is : %d\n", minThreads);
+        printf("Fxou have not requested enough threads for the program to execute accurately.\n We are using the minimum number of threads required which for your data size is : %d\n", minThreads);
       }	
 
 
@@ -127,11 +127,11 @@ int main(int argc, char **argv)
       
       // Device memory allocation
       cudaMalloc(&devX, dataPoints*sizeof(float));
-      cudaMalloc(&devY, dataPoints*sizeof(float));
+      cudaMalloc(&devFx, dataPoints*sizeof(float));
 
       //Host Memory Allocation
       X = (float *) malloc(sizeof(float)*dataPoints);
-      Y = (float *) malloc(sizeof(float)*dataPoints);
+      Fx = (float *) malloc(sizeof(float)*dataPoints);
       
       
       //Start executing
@@ -160,7 +160,7 @@ int main(int argc, char **argv)
       cudaEventRecord(startCuda, 0);
 
       //Call the function kernel
-      exponentialFunction<<<blocks,threads>>> (dataPoints, devX, devY);
+      exponentialFunction<<<blocks,threads>>> (dataPoints, devX, devFx);
       //Stop the Cuda Timings
       cudaEventRecord(stopCuda);
       cudaEventSynchronize(stopCuda);
@@ -170,8 +170,8 @@ int main(int argc, char **argv)
         printf("(2) CUDA RT error: %s \n", cudaGetErrorString(err));
       }
 
-      // Copy over the Y value from the device to the host
-      cudaMemcpy(Y, devY, dataPoints*sizeof(float), cudaMemcpyDeviceToHost);
+      // Copy over the Fx value from the device to the host
+      cudaMemcpy(Fx, devFx, dataPoints*sizeof(float), cudaMemcpyDeviceToHost);
       cudaFuncMemEnd=omp_get_wtime();
       //Check for errors after copying errors over from device to host.
       err = cudaGetLastError();
@@ -181,7 +181,7 @@ int main(int argc, char **argv)
 
       //clean up device memory
       cudaFree(devX);
-      cudaFree(devY);
+      cudaFree(devFx);
 	
       //Work out time
       //CUDA initialisation timing
@@ -193,11 +193,11 @@ int main(int argc, char **argv)
       
       ompMaxStart = omp_get_wtime();
       //print out the Cuda+OMP result
-      #pragma omp parallel for default(none) shared(Y, dataPoints) private(i) reduction(max: maxY) 
+      #pragma omp parallel for default(none) shared(Fx, dataPoints) private(i) reduction(max: maxFx) 
       for(i=0; i < dataPoints+1; i++)
       {
-         if (Y[i] > maxY){
-             maxY = Y[i];
+         if (Fx[i] > maxFx){
+             maxFx = Fx[i];
          }
       }
       ompMaxEnd = omp_get_wtime();
@@ -214,7 +214,7 @@ int main(int argc, char **argv)
       printf("|______________________________________________________________|\n");
       printf("|                |      Cuda + OMP      |      Serial Code     |\n", (ompMaxEnd - ompMaxStart)*1000, (serialMaxEnd - serialMaxStart)*1000);
       printf("| Total Time     |     %0.8f     |     %0.8f    |\n", (cudaEnd - cudaStart)*1000, (serialEnd - serialStart) * 1000);
-      printf("| Max Value F(x) |       %0.8f     |        %0.8f    |\n", maxY, serialMaxY); 
+      printf("| Max Value F(x) |       %0.8f     |        %0.8f    |\n", maxFx, serialMaxFx); 
       printf("|______________________________________________________________|\n");
    }
    else
@@ -225,6 +225,6 @@ int main(int argc, char **argv)
     printf("serial function: %0.5f\n", (serialFunctionEnd-serialFunctionStart)*1000);
     printf("serial max calc: %0.5f\n", (serialMaxEnd - serialMaxStart)*1000);
     printf("all serial: %0.5f \n", (serialEnd - serialStart) * 1000);
-    printf("serial maxY: %0.8f\n", serialMaxY);
+    printf("serial maxFx: %0.8f\n", serialMaxFx);
    }
 }
